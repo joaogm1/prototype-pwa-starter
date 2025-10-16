@@ -11,35 +11,34 @@
  */
 
 // IMPORTANTE: Configure aqui a URL do seu backend
-const API_BASE_URL = 'https://seu-backend.com/api'; // ⬅️ ALTERE PARA A URL DO SEU BACKEND
+const API_BASE_URL = 'http://localhost:8080'; // URL do backend Java
 
 /**
- * Interface que define os dados de um usuário
+ * Interface que define os dados de um usuário (UserResponse do backend)
  */
 export interface User {
-  id: string;
-  nome: string;
-  email: string;
-  tipoPerfil: 'gestante' | 'acompanhante';
-  dataCriacao?: string;
+  id?: string;
+  name: string;
+  username: string;
+  cpf: string;
 }
 
 /**
  * Interface para dados de login
  */
 export interface LoginCredentials {
-  email: string;
-  senha: string;
+  username: string;
+  password: string;
 }
 
 /**
- * Interface para dados de cadastro
+ * Interface para dados de cadastro (deve corresponder ao CreateUserRequest do backend)
  */
 export interface RegisterData {
-  nome: string;
-  email: string;
-  senha: string;
-  tipoPerfil: 'gestante' | 'acompanhante';
+  name: string;
+  username: string;
+  password: string;
+  cpf: string;
 }
 
 /**
@@ -55,12 +54,14 @@ export interface AuthResponse {
 /**
  * Função para fazer login
  * 
- * @param credentials - Email e senha do usuário
- * @returns Resposta com dados do usuário e token de autenticação
+ * @param credentials - Username e senha do usuário
+ * @returns Resposta com dados do usuário
  */
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    console.log('📤 Enviando credenciais de login:', { username: credentials.username });
+    
+    const response = await fetch(`${API_BASE_URL}/users/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,25 +69,28 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       body: JSON.stringify(credentials),
     });
 
+    console.log('📥 Status da resposta do login:', response.status);
+    
     const data = await response.json();
+    console.log('📥 Dados recebidos do login:', data);
 
     if (!response.ok) {
+      // Backend retorna { message: "..." } em caso de erro
       throw new Error(data.message || 'Erro ao fazer login');
     }
 
-    // Salva o token no localStorage para manter o usuário logado
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
+    // Sucesso: Backend retorna UserResponse
+    // Salva os dados do usuário no localStorage
+    localStorage.setItem('user', JSON.stringify(data));
+    // Marca como autenticado (simulando um token)
+    localStorage.setItem('authToken', 'authenticated');
 
     return {
       success: true,
-      user: data.user,
-      token: data.token,
+      user: data,
     };
   } catch (error) {
-    console.error('Erro no login:', error);
+    console.error('❌ Erro no login:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao fazer login',
@@ -97,12 +101,14 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 /**
  * Função para cadastrar um novo usuário
  * 
- * @param userData - Dados do novo usuário (nome, email, senha, tipo de perfil)
+ * @param userData - Dados do novo usuário (nome, username, senha, cpf)
  * @returns Resposta com dados do usuário criado
  */
 export const register = async (userData: RegisterData): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    console.log('📤 Enviando dados para o backend:', userData);
+    
+    const response = await fetch(`${API_BASE_URL}/users/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -110,25 +116,24 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
       body: JSON.stringify(userData),
     });
 
+    console.log('📥 Status da resposta:', response.status);
+    
     const data = await response.json();
+    console.log('📥 Dados recebidos do backend:', data);
 
     if (!response.ok) {
+      // Backend retorna { message: "..." } em caso de erro (status 400)
       throw new Error(data.message || 'Erro ao cadastrar usuário');
     }
 
-    // Após cadastro bem-sucedido, salva o token
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-
+    // Sucesso: Backend retorna diretamente o UserResponse (status 201)
+    // Como não há token/autenticação automática, apenas retornamos os dados do usuário
     return {
       success: true,
-      user: data.user,
-      token: data.token,
+      user: data, // data já é o UserResponse com {id, name, username, cpf}
     };
   } catch (error) {
-    console.error('Erro no cadastro:', error);
+    console.error('❌ Erro no cadastro:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao cadastrar',

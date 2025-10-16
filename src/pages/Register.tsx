@@ -2,7 +2,7 @@
  * PÁGINA DE CADASTRO
  * 
  * Esta é a tela onde novos usuários se cadastram no aplicativo.
- * Inclui campos para nome, email, senha, confirmação de senha e tipo de perfil.
+ * Inclui campos para nome, username, CPF, senha e confirmação de senha.
  */
 
 import { useState } from 'react';
@@ -10,7 +10,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { register } from '@/services/authService';
 
@@ -22,11 +21,11 @@ const Register = () => {
   const { toast } = useToast();
 
   // Estados para armazenar os valores dos campos do formulário
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [tipoPerfil, setTipoPerfil] = useState<'gestante' | 'acompanhante'>('gestante');
   
   // Estado para indicar se está carregando (fazendo requisição ao backend)
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +38,7 @@ const Register = () => {
     e.preventDefault(); // Previne o comportamento padrão do formulário
 
     // Validação: verifica se todos os campos foram preenchidos
-    if (!nome || !email || !senha || !confirmarSenha) {
+    if (!name || !username || !cpf || !password || !confirmarSenha) {
       toast({
         title: 'Campos obrigatórios',
         description: 'Por favor, preencha todos os campos.',
@@ -49,7 +48,7 @@ const Register = () => {
     }
 
     // Validação: verifica se o nome tem pelo menos 3 caracteres
-    if (nome.length < 3) {
+    if (name.length < 3) {
       toast({
         title: 'Nome inválido',
         description: 'O nome deve ter pelo menos 3 caracteres.',
@@ -58,19 +57,29 @@ const Register = () => {
       return;
     }
 
-    // Validação: verifica se o email está em formato válido
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Validação: verifica se o username tem pelo menos 3 caracteres
+    if (username.length < 3) {
       toast({
-        title: 'Email inválido',
-        description: 'Por favor, insira um email válido.',
+        title: 'Username inválido',
+        description: 'O username deve ter pelo menos 3 caracteres.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validação básica de CPF (11 dígitos)
+    const cpfRegex = /^\d{11}$/;
+    if (!cpfRegex.test(cpf.replace(/\D/g, ''))) {
+      toast({
+        title: 'CPF inválido',
+        description: 'Por favor, insira um CPF válido com 11 dígitos.',
         variant: 'destructive',
       });
       return;
     }
 
     // Validação: verifica se a senha tem pelo menos 6 caracteres
-    if (senha.length < 6) {
+    if (password.length < 6) {
       toast({
         title: 'Senha muito curta',
         description: 'A senha deve ter pelo menos 6 caracteres.',
@@ -80,7 +89,7 @@ const Register = () => {
     }
 
     // Validação: verifica se as senhas coincidem
-    if (senha !== confirmarSenha) {
+    if (password !== confirmarSenha) {
       toast({
         title: 'Senhas não coincidem',
         description: 'As senhas digitadas não são iguais.',
@@ -94,21 +103,21 @@ const Register = () => {
     try {
       // Chama o serviço de cadastro
       const response = await register({
-        nome,
-        email,
-        senha,
-        tipoPerfil,
+        name,
+        username,
+        password,
+        cpf: cpf.replace(/\D/g, ''), // Remove formatação do CPF
       });
 
       if (response.success) {
         // Cadastro bem-sucedido
         toast({
           title: 'Cadastro realizado!',
-          description: `Bem-vindo(a), ${response.user?.nome}!`,
+          description: `Bem-vindo(a), ${response.user?.name}! Agora faça login.`,
         });
         
-        // Redireciona para a página inicial
-        navigate('/home');
+        // Redireciona para a página de login
+        navigate('/login');
       } else {
         // Cadastro falhou
         toast({
@@ -145,47 +154,70 @@ const Register = () => {
         <form onSubmit={handleRegister} className="space-y-5">
           {/* Campo de Nome */}
           <div>
-            <Label htmlFor="nome" className="text-sm font-semibold text-foreground">
+            <Label htmlFor="name" className="text-sm font-semibold text-foreground">
               Nome Completo
             </Label>
             <Input
-              id="nome"
+              id="name"
               type="text"
               placeholder="Seu nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="input-humaniz mt-2"
               disabled={isLoading}
             />
           </div>
 
-          {/* Campo de Email */}
+          {/* Campo de Username */}
           <div>
-            <Label htmlFor="email" className="text-sm font-semibold text-foreground">
-              Email
+            <Label htmlFor="username" className="text-sm font-semibold text-foreground">
+              Username
             </Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              type="text"
+              placeholder="Escolha um username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="input-humaniz mt-2"
               disabled={isLoading}
+            />
+          </div>
+
+          {/* Campo de CPF */}
+          <div>
+            <Label htmlFor="cpf" className="text-sm font-semibold text-foreground">
+              CPF
+            </Label>
+            <Input
+              id="cpf"
+              type="text"
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={(e) => {
+                // Aceita apenas números e formata o CPF
+                const value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 11) {
+                  setCpf(value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'));
+                }
+              }}
+              className="input-humaniz mt-2"
+              disabled={isLoading}
+              maxLength={14}
             />
           </div>
 
           {/* Campo de Senha */}
           <div>
-            <Label htmlFor="senha" className="text-sm font-semibold text-foreground">
+            <Label htmlFor="password" className="text-sm font-semibold text-foreground">
               Senha
             </Label>
             <Input
-              id="senha"
+              id="password"
               type="password"
               placeholder="Mínimo 6 caracteres"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="input-humaniz mt-2"
               disabled={isLoading}
             />
@@ -205,47 +237,6 @@ const Register = () => {
               className="input-humaniz mt-2"
               disabled={isLoading}
             />
-          </div>
-
-          {/* Campo de Tipo de Perfil */}
-          <div className="pt-2">
-            <Label className="text-sm font-semibold text-foreground mb-3 block">
-              Você é:
-            </Label>
-            <RadioGroup
-              value={tipoPerfil}
-              onValueChange={(value) => setTipoPerfil(value as 'gestante' | 'acompanhante')}
-              className="space-y-3"
-              disabled={isLoading}
-            >
-              {/* Opção Gestante */}
-              <div className="flex items-center space-x-3 p-4 border-2 border-border rounded-xl hover:border-primary transition-all cursor-pointer">
-                <RadioGroupItem value="gestante" id="gestante" className="text-primary" />
-                <Label
-                  htmlFor="gestante"
-                  className="flex-1 cursor-pointer font-medium text-foreground"
-                >
-                  Gestante
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Estou grávida e quero planejar meu parto
-                  </p>
-                </Label>
-              </div>
-
-              {/* Opção Acompanhante */}
-              <div className="flex items-center space-x-3 p-4 border-2 border-border rounded-xl hover:border-primary transition-all cursor-pointer">
-                <RadioGroupItem value="acompanhante" id="acompanhante" className="text-primary" />
-                <Label
-                  htmlFor="acompanhante"
-                  className="flex-1 cursor-pointer font-medium text-foreground"
-                >
-                  Acompanhante
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Quero apoiar e acompanhar uma gestante
-                  </p>
-                </Label>
-              </div>
-            </RadioGroup>
           </div>
 
           {/* Botão de Cadastro */}
