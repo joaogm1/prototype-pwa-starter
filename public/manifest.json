@@ -1,0 +1,25 @@
+{
+  "name": "HumanizApp - Parto Humanizado",
+  "short_name": "HumanizApp",
+  "description": "Aplicativo para planejamento de parto humanizado e acompanhamento de gestação",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffdf7",
+  "theme_color": "#a87d90",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/placeholder.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "lifestyle"],
+  "lang": "pt-BR"
+}
