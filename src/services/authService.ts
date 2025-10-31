@@ -17,7 +17,7 @@ const API_BASE_URL = 'http://localhost:8080'; // URL do backend Java
  * Interface que define os dados de um usuário (UserResponse do backend)
  */
 export interface User {
-  id?: string;
+  id: number;
   name: string;
   username: string;
   cpf: string;
@@ -59,9 +59,10 @@ export interface AuthResponse {
  */
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   try {
-    console.log('📤 Enviando credenciais de login:', { username: credentials.username });
+    console.log('📤 Passo 1: Autenticando usuário:', { username: credentials.username });
     
-    const response = await fetch(`${API_BASE_URL}/users/login`, {
+    // Passo 1: Autentica o usuário (retorna true/false)
+    const loginResponse = await fetch(`${API_BASE_URL}/users/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,25 +70,42 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       body: JSON.stringify(credentials),
     });
 
-    console.log('📥 Status da resposta do login:', response.status);
+    console.log('📥 Status da autenticação:', loginResponse.status);
     
-    const data = await response.json();
-    console.log('📥 Dados recebidos do login:', data);
+    const isAuthenticated = await loginResponse.json();
+    console.log('📥 Autenticado?', isAuthenticated);
 
-    if (!response.ok) {
-      // Backend retorna { message: "..." } em caso de erro
-      throw new Error(data.message || 'Erro ao fazer login');
+    if (!loginResponse.ok || !isAuthenticated) {
+      throw new Error('Username ou senha incorretos');
     }
 
-    // Sucesso: Backend retorna UserResponse
+    // Passo 2: Busca os dados completos do usuário
+    console.log('📤 Passo 2: Buscando dados do usuário:', credentials.username);
+    
+    const userResponse = await fetch(`${API_BASE_URL}/users/${credentials.username}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('📥 Status da busca do usuário:', userResponse.status);
+
+    if (!userResponse.ok) {
+      throw new Error('Erro ao buscar dados do usuário');
+    }
+
+    const userData = await userResponse.json();
+    console.log('📥 Dados do usuário recebidos:', userData);
+
     // Salva os dados do usuário no localStorage
-    localStorage.setItem('user', JSON.stringify(data));
-    // Marca como autenticado (simulando um token)
+    localStorage.setItem('user', JSON.stringify(userData));
+    // Marca como autenticado
     localStorage.setItem('authToken', 'authenticated');
 
     return {
       success: true,
-      user: data,
+      user: userData,
     };
   } catch (error) {
     console.error('❌ Erro no login:', error);

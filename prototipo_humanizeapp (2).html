@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HumanizApp - Protótipo Cliente</title>
+    <!-- Carregamento do Tailwind CSS para estilo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração da fonte Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fffdf7; /* Light Beige/Cream (Bege Pastel) */
+        }
+        /* Estilo para simular a visualização em mobile */
+        #app-container {
+            max-width: 450px;
+            margin: 0 auto;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Definindo cores customizadas baseadas nos tons pasteis */
+        .color-primary { color: #a87d90; } /* Muted Rose/Mauve (Tonalidade de Rosa para Texto Principal) */
+        .bg-primary { background-color: #a87d90; }
+        .hover-bg-primary:hover { background-color: #926a7e; }
+        .border-primary { border-color: #a87d90; }
+        .bg-accent-light { background-color: #fce4ec; } /* Pastel Pink (Rosa Pastel de fundo para blocos) */
+        .text-accent { color: #d946ef; } /* Mantido para destaque, mas pode ser ajustado se necessário */
+    </style>
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variáveis globais de ambiente (MANDATÓRIAS)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = 'loading'; // ID do usuário ou anônimo
+        let currentView = 'login'; // Inicia na nova tela de Login
+        let birthPlan = {}; // Estado do Plano de Parto
+        let gestationWeek = 0; // Semana de gestação calculada
+        let profileType = localStorage.getItem('humanizapp_profile') || 'none'; // 'none', 'gestante', 'acompanhante'
+
+        const DUM_KEY = 'humanizapp_dum'; // Data da Última Menstruação (LMP)
+
+        // Estrutura simplificada do Plano de Parto (perguntas-chave)
+        const planStructure = [
+            { id: 'acompanhante', title: 'Acompanhante no Parto', type: 'select', options: ['Sim, uma pessoa de minha escolha', 'Apenas equipe médica', 'Não decidi'] },
+            { id: 'metodos_dor', title: 'Métodos Não Farmacológicos para Dor', type: 'checkbox', options: ['Massagem', 'Banho morno/chuveiro', 'Bola suíça', 'Música/Aromaterapia'] },
+            { id: 'posicao_parto', title: 'Posição Preferida para o Parto', type: 'select', options: ['Livre (escolhida na hora)', 'Verticalizada (cócoras, em pé)', 'Horizontal (deitada)'] },
+            { id: 'clampeamento', title: 'Clampeamento do Cordão Umbilical', type: 'select', options: ['Imediatamente', 'Clampeamento tardio (após cessar pulsação)'] },
+            { id: 'contato_pele', title: 'Contato Pele-a-Pele Pós-Parto', type: 'select', options: ['Sim, imediato, por pelo menos 1 hora', 'Sim, após procedimentos iniciais', 'Não'] },
+            { id: 'amamentacao', title: 'Amamentação na Primeira Hora', type: 'select', options: ['Sim, buscar iniciar na primeira hora', 'Não'] },
+            { id: 'observacoes', title: 'Outras Observações Importantes', type: 'textarea' }
+        ];
+
+        // --- Funções de Utilidade ---
+
+        // Função para calcular a semana de gestação (simulada)
+        function calculateGestationWeek() {
+            const currentProfile = localStorage.getItem('humanizapp_profile');
+            if (currentProfile !== 'gestante') {
+                gestationWeek = 0;
+                return;
+            }
+
+            const dumTimestamp = localStorage.getItem(DUM_KEY);
+            if (!dumTimestamp) {
+                gestationWeek = 0; // Se não houver DUM, retorna 0
+                return;
+            }
+            const dum = new Date(parseInt(dumTimestamp));
+            const today = new Date();
+            const diffTime = Math.abs(today - dum);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            // Calcula a semana (DUM + 7 dias = Semana 1)
+            gestationWeek = Math.floor((diffDays + 7) / 7);
+            // Limita a 42 semanas para manter a simulação realista
+            gestationWeek = Math.min(gestationWeek, 42);
+        }
+
+        // Função para iniciar o Firebase e Autenticação
+        async function initializeFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Configuração do Firebase não encontrada. Usando modo de demonstração local.");
+                    userId = 'demo-user-' + Math.random().toString(36).substring(2, 9);
+                    calculateGestationWeek();
+                    // Se estiver no modo demo e já tiver perfil, vai para home. Caso contrário, login.
+                    currentView = profileType !== 'none' ? 'home' : 'login';
+                    renderApp();
+                    return;
+                }
+
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Autenticação
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        profileType = localStorage.getItem('humanizapp_profile') || 'none';
+                        calculateGestationWeek();
+                        // Se autenticado e perfil definido, vai para home. Caso contrário, login.
+                        currentView = profileType !== 'none' ? 'home' : 'login';
+                        
+                        console.log("Autenticado com ID:", userId);
+                        startBirthPlanListener(); // Inicia o listener do Plano de Parto
+                    } else {
+                        userId = 'unauthenticated';
+                        currentView = 'login';
+                        console.log("Usuário não autenticado.");
+                    }
+                    renderApp();
+                });
+
+            } catch (error) {
+                console.error("Erro ao inicializar Firebase:", error);
+                document.getElementById('main-content').innerHTML = `
+                    <div class="p-6 text-red-600 text-center">
+                        <p>Erro Crítico de Inicialização.</p>
+                        <p>Verifique o console para detalhes.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Listener do Plano de Parto (Firestore)
+        function startBirthPlanListener() {
+            if (!db || userId === 'loading' || userId === 'unauthenticated') return;
+
+            const planDocRef = doc(db, `/artifacts/${appId}/users/${userId}/birth_plans`, 'my_plan');
+
+            onSnapshot(planDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    birthPlan = docSnap.data();
+                    console.log("Plano de Parto carregado/atualizado:", birthPlan);
+                } else {
+                    birthPlan = {};
+                    console.log("Nenhum Plano de Parto encontrado. Iniciando um novo.");
+                }
+                renderApp();
+            }, (error) => {
+                console.error("Erro ao ouvir o Plano de Parto:", error);
+            });
+        }
+
+        // Função para atualizar o DUM e o Perfil
+        function updateDUM(dateString, newProfileType) {
+            if (newProfileType) {
+                localStorage.setItem('humanizapp_profile', newProfileType);
+                profileType = newProfileType;
+            }
+
+            if (dateString) {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return;
+                localStorage.setItem(DUM_KEY, date.getTime());
+            } else {
+                 localStorage.removeItem(DUM_KEY);
+            }
+            
+            calculateGestationWeek();
+        }
+
+        // Função para salvar o Plano de Parto (Firestore)
+        async function saveBirthPlan() {
+            if (profileType !== 'gestante') {
+                console.warn("Plano de Parto disponível apenas para gestantes.");
+                return;
+            }
+            
+            if (!db || userId === 'loading' || userId === 'unauthenticated') {
+                console.warn("Não é possível salvar: Firebase ou userId indisponível.");
+                renderMessage('Não foi possível salvar (Modo Demo).', 'bg-yellow-100 text-yellow-800');
+                return;
+            }
+
+            const planDocRef = doc(db, `/artifacts/${appId}/users/${userId}/birth_plans`, 'my_plan');
+            try {
+                await setDoc(planDocRef, birthPlan, { merge: true });
+                renderMessage('Plano de Parto salvo com sucesso!', 'bg-green-100 text-green-800');
+            } catch (error) {
+                console.error("Erro ao salvar o Plano de Parto:", error);
+                renderMessage('Erro ao salvar o Plano de Parto.', 'bg-red-100 text-red-800');
+            }
+        }
+
+        // Função para exibir mensagem de notificação (substitui alert)
+        function renderMessage(message, classes) {
+            const messageBox = document.getElementById('message-box');
+            messageBox.textContent = message;
+            messageBox.className = `p-3 rounded-xl mb-4 text-sm font-semibold transition-all duration-300 ${classes}`;
+            messageBox.style.opacity = '1';
+            setTimeout(() => {
+                messageBox.style.opacity = '0';
+                messageBox.className = 'p-0 h-0'; // Limpa e esconde após a transição
+            }, 3000);
+        }
+
+        // --- Funções de Renderização de Telas ---
+        
+        // NOVA TELA: Login (Ponto de entrada)
+        function getLoginContent() {
+            return `
+                <div class="flex flex-col items-center justify-center min-h-screen bg-[#fffdf7] p-6 text-center">
+                    <div class="w-full max-w-sm p-8 bg-white rounded-3xl shadow-2xl">
+                        <!-- Logo: Silhueta da Gestante em SVG - Tonalidade Pastel -->
+                        <svg class="mx-auto w-24 h-24 text-pink-500 mb-6" fill="#a87d90" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Cabeça e corpo -->
+                            <path d="M12 11c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z"/>
+                            <path d="M12 2C9.243 2 7 4.243 7 7s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5zm0 13c-4.97 0-9 2.24-9 5v2h18v-2c0-2.76-4.03-5-9-5z"/>
+                            <!-- Adiciona uma forma para destacar a barriga de gestante -->
+                            <circle cx="12" cy="17.5" r="4" fill="#fce4ec" stroke="#a87d90" stroke-width="0.5"/>
+                            <path fill="#a87d90" d="M12 14c-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5zM12 18.5a1 1 0 100-2 1 1 0 000 2z" opacity="0.1"/>
+                        </svg>
+
+                        <h1 class="text-4xl font-extrabold color-primary mb-2">HumanizApp</h1>
+                        <p class="text-gray-500 mb-8">Seu guia para o parto humanizado.</p>
+                        
+                        <button onclick="changeView('register')" class="w-full bg-primary hover-bg-primary text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-md transform hover:scale-[1.02] mb-4">
+                            Cadastre-se ou Entre
+                        </button>
+                        
+                        <p class="text-sm text-gray-500 cursor-pointer hover:text-pink-600" onclick="changeView('home')">
+                            Acessar como usuário existente
+                        </p>
+
+                        <div class="mt-8 text-xs text-gray-400">
+                            Apoio Científico: UFCSPA
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // NOVA TELA: Cadastro (Seleção de Perfil e DUM)
+        function getRegistrationContent() {
+            const dumTimestamp = localStorage.getItem(DUM_KEY);
+            const currentProfile = localStorage.getItem('humanizapp_profile') || 'none';
+            const isGestante = currentProfile === 'gestante';
+
+            return `
+                <div class="p-6">
+                    <h1 class="text-3xl font-extrabold color-primary mb-1">Crie Seu Perfil</h1>
+                    <p class="text-gray-500 mb-6">Diga-nos quem você é para personalizarmos sua jornada.</p>
+
+                    <div class="bg-accent-light p-5 rounded-2xl shadow-lg mb-6">
+                        <div class="flex items-center mb-4 color-primary">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2"></path></svg>
+                            <h2 class="text-xl font-bold">Tipo de Usuário</h2>
+                        </div>
+                        
+                        <div class="flex space-x-4 mb-5">
+                            <!-- Opção Gestante -->
+                            <label class="flex items-center cursor-pointer p-3 border border-pink-300 rounded-xl flex-grow ${isGestante ? 'bg-white shadow-inner' : 'hover:bg-pink-100/50'}">
+                                <input type="radio" name="profileType" value="gestante" id="profile-gestante" 
+                                       onchange="toggleDUMInput(this.value)" ${isGestante ? 'checked' : ''}
+                                       class="focus:ring-primary h-4 w-4 text-primary border-gray-300">
+                                <span class="ml-3 text-sm font-medium text-gray-700">Gestante</span>
+                            </label>
+                            
+                            <!-- Opção Acompanhante -->
+                            <label class="flex items-center cursor-pointer p-3 border border-pink-300 rounded-xl flex-grow ${currentProfile === 'acompanhante' ? 'bg-white shadow-inner' : 'hover:bg-pink-100/50'}">
+                                <input type="radio" name="profileType" value="acompanhante" id="profile-acompanhante" 
+                                       onchange="toggleDUMInput(this.value)" ${currentProfile === 'acompanhante' ? 'checked' : ''}
+                                       class="focus:ring-primary h-4 w-4 text-primary border-gray-300">
+                                <span class="ml-3 text-sm font-medium text-gray-700">Acompanhante</span>
+                            </label>
+                        </div>
+
+                        <!-- Campo DUM (Condicional) -->
+                        <div id="dum-group" class="transition-all duration-300" style="display: ${isGestante || currentProfile === 'none' ? 'block' : 'none'};">
+                            <label for="dum-input" class="block text-sm font-medium text-gray-700 mb-2">Data da Última Menstruação (DUM):</label>
+                            <input type="date" id="dum-input" value="${dumTimestamp ? new Date(parseInt(dumTimestamp)).toISOString().substring(0, 10) : ''}"
+                                    class="w-full px-3 py-2 border border-pink-300 rounded-xl focus:ring-primary focus:border-primary shadow-sm">
+                        </div>
+                        
+                        <button onclick="registerHandler()" class="mt-6 w-full bg-primary hover-bg-primary text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-md">
+                            Continuar e Acessar
+                        </button>
+                    </div>
+
+                    <div class="mt-6 text-sm text-gray-500 text-center">
+                        <p>Seu ID de Usuário: ${userId}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Função para manipular a visibilidade do campo DUM
+        window.toggleDUMInput = (profile) => {
+            const dumGroup = document.getElementById('dum-group');
+            if (dumGroup) {
+                if (profile === 'gestante') {
+                    dumGroup.style.display = 'block';
+                } else {
+                    dumGroup.style.display = 'none';
+                }
+            }
+        };
+
+        // Tela Home (Início do app logado) - Personalizada por Perfil
+        function getHomeContent() {
+            let welcomeMessage = '';
+            let contentBlocks = '';
+            
+            if (profileType === 'acompanhante') {
+                welcomeMessage = `Olá, acompanhante! Use o app para se informar e apoiar a gestante.`;
+                
+                contentBlocks = `
+                    <div class="bg-accent-light p-4 rounded-2xl shadow-lg mb-6">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 color-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path></svg>
+                            <h2 class="text-xl font-bold color-primary">Recursos para Acompanhantes</h2>
+                        </div>
+                        <p class="text-gray-600 mb-4">
+                            Explore o Conteúdo para saber como melhor apoiar a gestante durante a gravidez e o parto.
+                        </p>
+                        <button onclick="changeView('conteudo')" class="mt-2 w-full bg-primary hover-bg-primary text-white font-semibold py-2 px-4 rounded-xl transition duration-200 shadow-md">
+                            Ver Conteúdo
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-2xl shadow-lg">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 text-pink-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2a3 3 0 015.356-1.857M7 20h10m0 0a3 3 0 01-3.414-2.236l-1.39-4.325a.75.75 0 01.127-.714l1.246-1.488A1.5 1.5 0 0012 8.75V3m0 0l-2.47 2.47M12 3l2.47 2.47"></path></svg>
+                            <h2 class="text-xl font-bold text-pink-600">Comunidade</h2>
+                        </div>
+                        <p class="text-gray-600">
+                            Use a Comunidade para tirar dúvidas e encontrar outras pessoas na mesma jornada de apoio.
+                        </p>
+                        <button onclick="changeView('comunidade')" class="mt-2 w-full bg-primary hover-bg-primary text-white font-semibold py-2 px-4 rounded-xl transition duration-200 shadow-md">
+                            Acessar Comunidade
+                        </button>
+                    </div>
+                `;
+
+            } else { // Gestante ou Perfil Não Definido
+                if (gestationWeek > 0 && gestationWeek <= 42) {
+                    welcomeMessage = `Olá, gestante! Você está na sua **${gestationWeek}ª semana** de gestação.`;
+                } else {
+                    welcomeMessage = `Olá! Por favor, vá em "Mudar Perfil/DUM" para personalizar seu acompanhamento.`;
+                }
+                
+                contentBlocks = `
+                    <div class="bg-accent-light p-4 rounded-2xl shadow-lg mb-6">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 color-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <h2 class="text-xl font-bold color-primary">Plano de Parto (Seu Foco)</h2>
+                        </div>
+                        <p class="text-gray-600 mb-4">
+                            Seu Plano de Parto está sendo salvo em tempo real. Continue a preenchê-lo para garantir que seus desejos sejam ouvidos!
+                        </p>
+                         <button onclick="changeView('plano')" class="mt-2 w-full bg-primary hover-bg-primary text-white font-semibold py-2 px-4 rounded-xl transition duration-200 shadow-md">
+                            Ir para o Plano
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-2xl shadow-lg">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 text-pink-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2a3 3 0 000 6v-2m0 0V8m0 0H9m3 0h3m-6 3h6m-6 3h6"></path></svg>
+                            <h2 class="text-xl font-bold text-pink-600">Dica do Dia (Semana ${gestationWeek > 0 ? gestationWeek : 'Inicial'})</h2>
+                        </div>
+                        <p class="text-gray-600">
+                            ${gestationWeek > 12 ? 'Foque na elaboração do seu Plano de Parto! Pense em quem você quer como acompanhante e as posições que podem te dar mais conforto.' : 'Pesquisas mostram que ler sobre o parto humanizado desde cedo ajuda a reduzir a ansiedade. Explore a seção "Conteúdo"!'}.
+                        </p>
+                    </div>
+                `;
+            }
+
+
+            return `
+                <div class="p-6">
+                    <h1 class="text-3xl font-extrabold color-primary mb-1">HumanizApp</h1>
+                    <p class="text-gray-500 mb-6">${welcomeMessage}</p>
+                    
+                    ${contentBlocks}
+
+                    <div class="mt-6 text-xs text-center text-gray-400">
+                        Seu ID de Usuário: ${userId}
+                        ${profileType !== 'none' ? `| Perfil: ${profileType.charAt(0).toUpperCase() + profileType.slice(1)}` : ''}
+                        <br><span class="cursor-pointer hover:underline" onclick="changeView('register')">Mudar Perfil/DUM</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getConteduoContent() {
+            const titles = {
+                1: 'O Início de Tudo (0-12s)',
+                2: 'O Meio da Jornada (13-28s)',
+                3: 'Reta Final: Parto e Puerpério (29s+)'
+            };
+            const currentTrilha = gestationWeek < 13 ? 1 : (gestationWeek < 29 ? 2 : 3);
+            const trilhaTitle = gestationWeek > 0 ? titles[currentTrilha] : 'Geral (Insira a DUM para personalizar)';
+
+            return `
+                <div class="p-6">
+                    <h1 class="text-3xl font-extrabold color-primary mb-1">Biblioteca de Conteúdos</h1>
+                    <p class="text-gray-500 mb-6">Informação confiável sobre gestação, parto e puerpério.</p>
+
+                    <h2 class="text-xl font-bold color-primary mb-3">Trilha Personalizada: ${trilhaTitle}</h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-accent-light border-l-4 border-primary rounded-r-xl shadow-md">
+                            <p class="font-semibold color-primary">Artigo: Benefícios e Direitos do Parto Humanizado</p>
+                            <p class="text-sm text-gray-600">Entenda por que o parto humanizado é a melhor escolha.</p>
+                        </div>
+                        <div class="p-4 bg-accent-light border-l-4 border-primary rounded-r-xl shadow-md">
+                            <p class="font-semibold color-primary">Guia: Puerpério sem Mitos - As Primeiras Semanas</p>
+                            <p class="text-sm text-gray-600">Saiba o que esperar e como se cuidar após o nascimento.</p>
+                        </div>
+                        <div class="p-4 bg-accent-light border-l-4 border-primary rounded-r-xl shadow-md">
+                            <p class="font-semibold color-primary">Vídeo: Posições de Parto e Alívio da Dor (Com Evidências)</p>
+                            <p class="text-sm text-gray-600">O que funciona e o que diz a ciência.</p>
+                        </div>
+                    </div>
+                    
+                    <h2 class="text-xl font-bold color-primary mt-8 mb-3">Busca Rápida</h2>
+                    <input type="text" placeholder="Buscar por 'Amamentação', 'Cesárea', etc." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary shadow-sm">
+                </div>
+            `;
+        }
+
+        function getPlanoDePartoContent() {
+            const isGestante = profileType === 'gestante';
+
+            if (!isGestante) {
+                return `
+                    <div class="p-6 text-center">
+                        <h1 class="text-3xl font-extrabold color-primary mb-4">Plano de Parto</h1>
+                        <p class="text-gray-500 mb-6">Esta seção é exclusiva para gestantes.</p>
+                        <p class="bg-yellow-50 p-4 rounded-xl text-yellow-800">
+                            Se você é gestante, por favor, clique em **Mudar Perfil/DUM** na tela Início para atualizar seu tipo de usuário.
+                        </p>
+                    </div>
+                `;
+            }
+
+            const planFields = planStructure.map(field => {
+                const currentValue = birthPlan[field.id] || (field.type === 'checkbox' ? [] : '');
+                let inputHtml = '';
+                
+                if (field.type === 'select') {
+                    inputHtml = `
+                        <select id="plan-${field.id}" onchange="handlePlanChange('${field.id}', this.value)" 
+                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-xl shadow-sm">
+                            <option value="">-- Selecione uma Opção --</option>
+                            ${field.options.map(opt => 
+                                `<option value="${opt}" ${currentValue === opt ? 'selected' : ''}>${opt}</option>`
+                            ).join('')}
+                        </select>
+                    `;
+                } else if (field.type === 'textarea') {
+                    inputHtml = `
+                        <textarea id="plan-${field.id}" rows="4" oninput="handlePlanChange('${field.id}', this.value)" 
+                                  class="mt-1 block w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-primary focus:border-primary" placeholder="Escreva aqui seus desejos e observações.">${currentValue}</textarea>
+                    `;
+                } else if (field.type === 'checkbox') {
+                    inputHtml = field.options.map(opt => `
+                        <div class="flex items-center mt-2">
+                            <input id="plan-${field.id}-${opt}" type="checkbox" value="${opt}" ${currentValue.includes(opt) ? 'checked' : ''}
+                                   onchange="handleCheckboxChange('${field.id}', this.value, this.checked)"
+                                   class="focus:ring-primary h-4 w-4 text-primary border-gray-300 rounded">
+                            <label for="plan-${field.id}-${opt}" class="ml-3 block text-sm font-medium text-gray-700">${opt}</label>
+                        </div>
+                    `).join('');
+                }
+
+                return `
+                    <div class="bg-white p-5 rounded-2xl shadow-lg border border-gray-100">
+                        <label class="block text-lg font-semibold color-primary mb-2">${field.title}</label>
+                        ${inputHtml}
+                    </div>
+                `;
+            }).join('');
+
+
+            return `
+                <div class="p-6">
+                    <h1 class="text-3xl font-extrabold color-primary mb-1">Plano de Parto</h1>
+                    <p class="text-gray-500 mb-6">Assistente guiado para elaborar seu documento. **Salvo automaticamente!**</p>
+
+                    <button onclick="saveBirthPlanHandler()" class="w-full bg-primary hover-bg-primary text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-lg mb-6 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-3m-1-4l-3 3m0 0l-3-3m3 3V4m4 0h3"></path></svg>
+                        Simular Exportação/Compartilhamento
+                    </button>
+                    
+                    <div class="space-y-5">
+                        ${planFields}
+                    </div>
+
+                    <p class="text-sm text-gray-400 mt-6 text-center">
+                        O Plano de Parto completo será gerado com as suas respostas e revisado com base em evidências científicas.
+                    </p>
+                </div>
+            `;
+        }
+
+        function getComunidadeContent() {
+            const feedData = [
+                { user: 'Usuária 123', week: 25, message: 'Alguém mais com muita ansiedade sobre o parto? Buscando dicas para relaxar!', date: 'há 1h' },
+                { user: 'Usuária 456', week: 32, message: 'Acabei de salvar meu Plano de Parto! Fiquei muito mais confiante com o guia. 😊', date: 'há 3h' },
+                { user: 'Parceiro 789', week: 18, message: 'Dúvida: Qual o melhor momento para começar a pesquisar sobre a doula?', date: 'há 1d' }
+            ];
+
+            const feedItems = feedData.map(item => `
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-bold color-primary">${item.user} (Semana ${item.week})</span>
+                        <span class="text-xs text-gray-400">${item.date}</span>
+                    </div>
+                    <p class="text-gray-700">${item.message}</p>
+                    <div class="mt-3 flex space-x-4 text-sm text-gray-500">
+                        <span class="cursor-pointer hover:text-primary">Curtir</span>
+                        <span class="cursor-pointer hover:text-primary">Comentar (3)</span>
+                    </div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="p-6">
+                    <h1 class="text-3xl font-extrabold color-primary mb-1">Comunidade & Apoio</h1>
+                    <p class="text-gray-500 mb-6">Um espaço seguro para trocar experiências com outras gestantes e familiares.</p>
+
+                    <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-xl shadow-md">
+                        <p class="font-semibold text-yellow-800">Lembrete: Mantenha a comunicação respeitosa e evite compartilhar informações médicas não validadas.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        ${feedItems}
+                    </div>
+                    
+                    <button class="mt-6 w-full bg-primary hover-bg-primary text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        Nova Publicação
+                    </button>
+                </div>
+            `;
+        }
+
+
+        // --- Funções de Manipulação de Eventos e Estado ---
+
+        window.handlePlanChange = (fieldId, value) => {
+            if (fieldId === 'observacoes') {
+                birthPlan[fieldId] = value;
+            } else {
+                birthPlan[fieldId] = value;
+                saveBirthPlan(); // Salva em tempo real no Firestore (ou simula)
+            }
+        };
+
+        window.handleCheckboxChange = (fieldId, optionValue, isChecked) => {
+            let current = birthPlan[fieldId] || [];
+            if (isChecked) {
+                if (!current.includes(optionValue)) {
+                    current.push(optionValue);
+                }
+            } else {
+                current = current.filter(item => item !== optionValue);
+            }
+            birthPlan[fieldId] = current;
+            saveBirthPlan(); // Salva em tempo real no Firestore (ou simula)
+        };
+        
+        // Novo Handler para o Cadastro
+        window.registerHandler = () => {
+            const profileRadio = document.querySelector('input[name="profileType"]:checked');
+            if (!profileRadio) {
+                renderMessage('Por favor, selecione seu tipo de perfil.', 'bg-red-100 text-red-800');
+                return;
+            }
+
+            const selectedProfile = profileRadio.value;
+            const dumInput = document.getElementById('dum-input');
+            
+            let dumValue = null;
+
+            if (selectedProfile === 'gestante') {
+                if (!dumInput || !dumInput.value) {
+                    renderMessage('Gestantes precisam inserir a DUM para personalização.', 'bg-red-100 text-red-800');
+                    return;
+                }
+                dumValue = dumInput.value;
+            } else {
+                // Acompanhante não precisa de DUM, zera a semana de gestação para não ter cálculo incorreto
+                localStorage.removeItem(DUM_KEY);
+                gestationWeek = 0;
+            }
+            
+            updateDUM(dumValue, selectedProfile);
+            changeView('home');
+            renderMessage('Cadastro completo! Seu acompanhamento está personalizado.', 'bg-green-100 text-green-800');
+        };
+
+        window.saveBirthPlanHandler = () => {
+            renderMessage('Documento de Plano de Parto em PDF/HTML exportado para compartilhamento!', 'bg-accent-light text-primary');
+        }
+        
+        // Função principal de renderização
+        function renderApp() {
+            const mainContent = document.getElementById('main-content');
+            let content = '';
+
+            // Se o ID do usuário ainda estiver carregando, mostra o spinner
+            if (userId === 'loading') {
+                mainContent.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full p-10">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                        <p class="mt-4 color-primary font-medium">Carregando...</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Define o conteúdo da view atual
+            switch (currentView) {
+                case 'login':
+                    content = getLoginContent();
+                    break;
+                case 'register':
+                    content = getRegistrationContent();
+                    break;
+                case 'conteudo':
+                    content = getConteduoContent();
+                    break;
+                case 'plano':
+                    content = getPlanoDePartoContent();
+                    break;
+                case 'comunidade':
+                    content = getComunidadeContent();
+                    break;
+                case 'home':
+                default:
+                    content = getHomeContent();
+                    break;
+            }
+
+            mainContent.innerHTML = content;
+            
+            // A barra de navegação só é renderizada após o login/cadastro (home e telas posteriores)
+            const navbar = document.getElementById('app-navbar');
+            if (currentView === 'home' || currentView === 'conteudo' || currentView === 'plano' || currentView === 'comunidade') {
+                navbar.classList.remove('hidden');
+                renderNavbar();
+            } else {
+                navbar.classList.add('hidden');
+            }
+        }
+
+        // Função para mudar a view
+        window.changeView = (newView) => {
+            currentView = newView;
+            window.scrollTo(0, 0); // Rola para o topo ao mudar de tela
+            renderApp();
+        };
+
+        // Função para renderizar a barra de navegação inferior
+        function renderNavbar() {
+            const navbar = document.getElementById('app-navbar');
+            const items = [
+                { id: 'home', icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>`, label: 'Início' },
+                { id: 'conteudo', icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.466 9.563 5 8 5c-4 0-4 4-4 4v7c0 1.635 1.002 3 2.5 3S12 16.5 12 15m0-6c1.168 0 2.437.466 4 1.253v13m-4-6c0-1.635 1.002-3 2.5-3s2.5 1.365 2.5 3v7c0 1.635-1.002 3-2.5 3S12 16.5 12 15"></path></svg>`, label: 'Conteúdo' },
+                { id: 'plano', icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`, label: 'Plano' },
+                { id: 'comunidade', icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2a3 3 0 015.356-1.857M7 20h10m0 0a3 3 0 01-3.414-2.236l-1.39-4.325a.75.75 0 01.127-.714l1.246-1.488A1.5 1.5 0 0012 8.75V3m0 0l-2.47 2.47M12 3l2.47 2.47"></path></svg>`, label: 'Comunidade' }
+            ];
+
+            navbar.innerHTML = items.map(item => {
+                const isActive = item.id === currentView;
+                const baseClasses = 'flex flex-col items-center justify-center p-2 transition-colors duration-200 rounded-full';
+                const activeClasses = isActive ? 'color-primary font-bold' : 'text-gray-500 hover:color-primary';
+                
+                return `
+                    <button onclick="changeView('${item.id}')" class="${baseClasses} ${activeClasses} w-1/4">
+                        <div class="w-6 h-6">${item.icon}</div>
+                        <span class="text-xs mt-1">${item.label}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Inicia a aplicação no carregamento da janela
+        window.onload = initializeFirebase;
+    </script>
+</head>
+<body>
+    <div id="app-container" class="h-screen">
+        
+        <!-- Conteúdo Principal (Scrollable) -->
+        <main id="main-content" class="flex-grow overflow-y-auto pt-4 pb-20">
+            <div class="flex flex-col items-center justify-center h-full p-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                <p class="mt-4 color-primary font-medium">Carregando...</p>
+            </div>
+        </main>
+
+        <!-- Caixa de Mensagens (Global, substitui alert) -->
+        <div id="message-box" class="fixed top-4 left-1/2 -translate-x-1/2 w-11/12 max-w-sm p-0 h-0 text-center z-50 opacity-0 transition-all duration-300">
+            <!-- As mensagens aparecerão aqui -->
+        </div>
+
+        <!-- Barra de Navegação Inferior (Fixo) -->
+        <nav id="app-navbar" class="fixed bottom-0 w-full max-w-[450px] bg-white border-t border-gray-200 shadow-xl flex justify-around p-2 hidden">
+            <!-- O conteúdo da navegação será injetado pelo JavaScript -->
+        </nav>
+
+    </div>
+</body>
+</html>

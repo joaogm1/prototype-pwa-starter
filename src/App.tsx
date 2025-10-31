@@ -15,6 +15,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
+import BirthPlan from "./pages/BirthPlan";
 import NotFound from "./pages/NotFound";
 
 // Configuração do React Query (gerenciamento de estado e cache)
@@ -42,6 +43,9 @@ const App = () => (
           
           {/* Rota da página inicial (após login) */}
           <Route path="/home" element={<Home />} />
+          
+          {/* Rota do Plano de Parto */}
+          <Route path="/birth-plan" element={<BirthPlan />} />
           
           {/* Rota 404 - Página não encontrada */}
           <Route path="*" element={<NotFound />} />

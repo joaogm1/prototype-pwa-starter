@@ -67,7 +67,7 @@ const Home = () => {
             <div>
               <h1 className="text-3xl font-extrabold text-primary">HumanizApp</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Olá, {user.nome}!
+                Olá, {user.name}!
               </p>
             </div>
             <Button
@@ -102,36 +102,40 @@ const Home = () => {
               <h2 className="text-xl font-bold text-primary">Bem-vindo(a)!</h2>
             </div>
             <p className="text-foreground">
-              {user.tipoPerfil === 'gestante' 
-                ? 'Você está na área de gestante. Aqui você poderá planejar seu parto humanizado.'
-                : 'Você está na área de acompanhante. Aqui você poderá apoiar e acompanhar uma gestante.'}
+              Bem-vindo ao HumanizApp! Aqui você poderá planejar seu parto humanizado e acessar conteúdos educativos.
             </p>
           </div>
+
+          {/* Botão Plano de Parto */}
+          <Button
+            onClick={() => navigate('/birth-plan')}
+            className="w-full mb-6"
+            size="lg"
+          >
+            📝 Criar Meu Plano de Parto
+          </Button>
 
           {/* Card informativo */}
           <div className="bg-white p-5 rounded-2xl shadow-lg border border-border">
             <h3 className="text-lg font-bold text-foreground mb-3">
-              Próximos Passos
+              Funcionalidades Disponíveis
             </h3>
-            <p className="text-muted-foreground text-sm mb-4">
-              Esta é a primeira versão do aplicativo. Em breve, você terá acesso a:
-            </p>
             <ul className="space-y-2 text-sm text-foreground">
               <li className="flex items-start">
                 <span className="text-primary mr-2">✓</span>
                 Plano de Parto personalizado
               </li>
               <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                Biblioteca de conteúdos educativos
+                <span className="text-muted-foreground mr-2">○</span>
+                <span className="text-muted-foreground">Biblioteca de conteúdos educativos (em breve)</span>
               </li>
               <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                Comunidade de apoio
+                <span className="text-muted-foreground mr-2">○</span>
+                <span className="text-muted-foreground">Comunidade de apoio (em breve)</span>
               </li>
               <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                Acompanhamento semanal da gestação
+                <span className="text-muted-foreground mr-2">○</span>
+                <span className="text-muted-foreground">Acompanhamento semanal da gestação (em breve)</span>
               </li>
             </ul>
           </div>
@@ -143,14 +147,13 @@ const Home = () => {
             </h4>
             <div className="space-y-1 text-sm">
               <p className="text-foreground">
-                <span className="font-semibold">Nome:</span> {user.nome}
+                <span className="font-semibold">Nome:</span> {user.name}
               </p>
               <p className="text-foreground">
-                <span className="font-semibold">Email:</span> {user.email}
+                <span className="font-semibold">Username:</span> {user.username}
               </p>
               <p className="text-foreground">
-                <span className="font-semibold">Tipo:</span>{' '}
-                {user.tipoPerfil === 'gestante' ? 'Gestante' : 'Acompanhante'}
+                <span className="font-semibold">CPF:</span> {user.cpf}
               </p>
             </div>
           </div>
