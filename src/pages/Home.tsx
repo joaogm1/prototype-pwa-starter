@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { logout, getCurrentUser, isAuthenticated, type User } from '@/services/authService';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 const Home = () => {
   // Hook para navegação entre páginas
@@ -63,7 +64,7 @@ const Home = () => {
       <div className="w-full max-w-md mobile-container bg-white min-h-screen">
         {/* Header */}
         <div className="p-6 border-b border-border">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-extrabold text-primary">HumanizApp</h1>
               <p className="text-sm text-muted-foreground mt-1">
@@ -78,6 +79,11 @@ const Home = () => {
             >
               Sair
             </Button>
+          </div>
+          
+          {/* Seletor de Tema */}
+          <div className="flex justify-end">
+            <ThemeSelector />
           </div>
         </div>
 
@@ -106,14 +112,25 @@ const Home = () => {
             </p>
           </div>
 
-          {/* Botão Plano de Parto */}
-          <Button
-            onClick={() => navigate('/birth-plan')}
-            className="w-full mb-6"
-            size="lg"
-          >
-            📝 Criar Meu Plano de Parto
-          </Button>
+          {/* Botões de Navegação */}
+          <div className="space-y-4 mb-6">
+            <Button
+              onClick={() => navigate('/birth-plan')}
+              className="w-full"
+              size="lg"
+            >
+              📝 Meu Plano de Parto
+            </Button>
+
+            <Button
+              onClick={() => navigate('/informations')}
+              variant="secondary"
+              className="w-full"
+              size="lg"
+            >
+              📰 Informações e Novidades
+            </Button>
+          </div>
 
           {/* Card informativo */}
           <div className="bg-white p-5 rounded-2xl shadow-lg border border-border">

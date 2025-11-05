@@ -109,6 +109,132 @@
     --sidebar-border: 340 20% 18%;
     --sidebar-ring: 336 22% 67%;
   }
+
+  /* TEMA ROSA - #EEC1D8 */
+  html.theme-rosa,
+  html.theme-rosa :root {
+    --background: 340 100% 98%;
+    --foreground: 340 20% 20%;
+    --primary: 335 53% 82%; /* Rosa #EEC1D8 */
+    --primary-foreground: 335 53% 15%;
+    --primary-hover: 335 53% 72%;
+    --secondary: 335 53% 95%;
+    --secondary-foreground: 335 53% 30%;
+    --accent: 335 53% 95%;
+    --accent-foreground: 335 53% 30%;
+    --muted: 335 30% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 335 30% 88%;
+    --input: 335 30% 88%;
+    --ring: 335 53% 82%;
+    --card: 0 0% 100%;
+    --card-foreground: 340 20% 20%;
+  }
+
+  /* TEMA LILÁS - #C6B3FA */
+  html.theme-lilas,
+  html.theme-lilas :root {
+    --background: 260 100% 98%;
+    --foreground: 260 20% 20%;
+    --primary: 258 88% 84%; /* Lilás #C6B3FA */
+    --primary-foreground: 258 88% 15%;
+    --primary-hover: 258 88% 74%;
+    --secondary: 258 88% 95%;
+    --secondary-foreground: 258 88% 30%;
+    --accent: 258 88% 95%;
+    --accent-foreground: 258 88% 30%;
+    --muted: 258 30% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 258 30% 88%;
+    --input: 258 30% 88%;
+    --ring: 258 88% 84%;
+    --card: 0 0% 100%;
+    --card-foreground: 260 20% 20%;
+  }
+
+  /* TEMA SALMÃO - #F1C6A4 */
+  html.theme-salmao,
+  html.theme-salmao :root {
+    --background: 25 100% 98%;
+    --foreground: 25 20% 20%;
+    --primary: 25 72% 80%; /* Salmão #F1C6A4 */
+    --primary-foreground: 25 72% 15%;
+    --primary-hover: 25 72% 70%;
+    --secondary: 25 72% 95%;
+    --secondary-foreground: 25 72% 30%;
+    --accent: 25 72% 95%;
+    --accent-foreground: 25 72% 30%;
+    --muted: 25 30% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 25 30% 88%;
+    --input: 25 30% 88%;
+    --ring: 25 72% 80%;
+    --card: 0 0% 100%;
+    --card-foreground: 25 20% 20%;
+  }
+
+  /* TEMA AZUL - #B2D5DE */
+  html.theme-azul,
+  html.theme-azul :root {
+    --background: 192 100% 98%;
+    --foreground: 192 20% 20%;
+    --primary: 192 44% 78%; /* Azul #B2D5DE */
+    --primary-foreground: 192 44% 15%;
+    --primary-hover: 192 44% 68%;
+    --secondary: 192 44% 95%;
+    --secondary-foreground: 192 44% 30%;
+    --accent: 192 44% 95%;
+    --accent-foreground: 192 44% 30%;
+    --muted: 192 30% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 192 30% 88%;
+    --input: 192 30% 88%;
+    --ring: 192 44% 78%;
+    --card: 0 0% 100%;
+    --card-foreground: 192 20% 20%;
+  }
+
+  /* TEMA AMARELO - #FFF4AC */
+  html.theme-amarelo,
+  html.theme-amarelo :root {
+    --background: 52 100% 98%;
+    --foreground: 52 50% 20%;
+    --primary: 52 100% 83%; /* Amarelo #FFF4AC */
+    --primary-foreground: 52 100% 20%;
+    --primary-hover: 52 100% 73%;
+    --secondary: 52 100% 95%;
+    --secondary-foreground: 52 100% 30%;
+    --accent: 52 100% 95%;
+    --accent-foreground: 52 100% 30%;
+    --muted: 52 30% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 52 30% 88%;
+    --input: 52 30% 88%;
+    --ring: 52 100% 83%;
+    --card: 0 0% 100%;
+    --card-foreground: 52 50% 20%;
+  }
+
+  /* TEMA VERDE - #B2DECD */
+  html.theme-verde,
+  html.theme-verde :root {
+    --background: 158 100% 98%;
+    --foreground: 158 20% 20%;
+    --primary: 158 48% 78%; /* Verde #B2DECD */
+    --primary-foreground: 158 48% 15%;
+    --primary-hover: 158 48% 68%;
+    --secondary: 158 48% 95%;
+    --secondary-foreground: 158 48% 30%;
+    --accent: 158 48% 95%;
+    --accent-foreground: 158 48% 30%;
+    --muted: 158 30% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 158 30% 88%;
+    --input: 158 30% 88%;
+    --ring: 158 48% 78%;
+    --card: 0 0% 100%;
+    --card-foreground: 158 20% 20%;
+  }
 }
 
 @layer base {

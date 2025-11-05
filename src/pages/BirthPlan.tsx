@@ -25,6 +25,7 @@ import {
   type BirthPlanResponse
 } from '@/services/birthPlanService';
 import jsPDF from 'jspdf';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 interface BirthPlanFormData {
   companionName: string;
@@ -397,13 +398,15 @@ const BirthPlan = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/home')}
-            className="mb-4"
-          >
-            ← Voltar
-          </Button>
+          <div className="flex justify-between items-start mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/home')}
+            >
+              ← Voltar
+            </Button>
+            <ThemeSelector />
+          </div>
           <h1 className="text-4xl font-extrabold text-primary mb-2">
             Plano de Parto {isViewMode ? '(Visualização)' : existingPlanId ? '(Editando)' : '(Novo)'}
           </h1>

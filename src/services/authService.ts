@@ -21,6 +21,7 @@ export interface User {
   name: string;
   username: string;
   cpf: string;
+  role?: string; // 'ADMIN' ou null/undefined para usuários normais
 }
 
 /**

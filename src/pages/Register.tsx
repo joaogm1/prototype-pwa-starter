@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { register } from '@/services/authService';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 const Register = () => {
   // Hook para navegação entre páginas
@@ -142,6 +143,10 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       {/* Container mobile-friendly */}
       <div className="w-full max-w-md mobile-container bg-white p-8 rounded-2xl shadow-xl">
+        <div className="flex justify-end mb-4">
+          <ThemeSelector />
+        </div>
+        
         {/* Logo e título */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-extrabold text-primary mb-2">HumanizApp</h1>

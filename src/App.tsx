@@ -12,10 +12,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
 import BirthPlan from "./pages/BirthPlan";
+import Informations from "./pages/Informations";
+import CreateEditInformation from "./pages/CreateEditInformation";
 import NotFound from "./pages/NotFound";
 
 // Configuração do React Query (gerenciamento de estado e cache)
@@ -27,10 +30,11 @@ const queryClient = new QueryClient();
  */
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <Routes>
           {/* Rota raiz redireciona para login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -47,11 +51,21 @@ const App = () => (
           {/* Rota do Plano de Parto */}
           <Route path="/birth-plan" element={<BirthPlan />} />
           
+          {/* Rota de Informações */}
+          <Route path="/informations" element={<Informations />} />
+          
+          {/* Rota para Criar Informação (apenas ADMIN) */}
+          <Route path="/informations/create" element={<CreateEditInformation />} />
+          
+          {/* Rota para Editar Informação (apenas ADMIN) */}
+          <Route path="/informations/edit/:id" element={<CreateEditInformation />} />
+          
           {/* Rota 404 - Página não encontrada */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </TooltipProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
