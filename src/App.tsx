@@ -18,6 +18,7 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import BirthPlan from "./pages/BirthPlan";
 import Informations from "./pages/Informations";
+import ViewInformation from "./pages/ViewInformation";
 import CreateEditInformation from "./pages/CreateEditInformation";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +54,9 @@ const App = () => (
           
           {/* Rota de Informações */}
           <Route path="/informations" element={<Informations />} />
+          
+          {/* Rota para Visualizar Informação Individual */}
+          <Route path="/informations/view/:id" element={<ViewInformation />} />
           
           {/* Rota para Criar Informação (apenas ADMIN) */}
           <Route path="/informations/create" element={<CreateEditInformation />} />

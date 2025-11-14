@@ -10,18 +10,20 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getCurrentUser, isAuthenticated } from '@/services/authService';
 import { 
-  createInformation, 
-  getInformationById, 
-  updateInformation,
-  deleteInformation,
-  type Information 
+  createContent, 
+  getContentById, 
+  updateContent,
+  deleteContent,
+  type Content 
 } from '@/services/informationService';
 import { ThemeSelector } from '@/components/ThemeSelector';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const CreateEditInformation = () => {
   const navigate = useNavigate();
@@ -30,11 +32,37 @@ const CreateEditInformation = () => {
   const isEditMode = Boolean(id);
   
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [text, setText] = useState(''); // HTML content
+  const [category, setCategory] = useState('gestacao');
+  const [role, setRole] = useState('public');
+  const [trimester, setTrimester] = useState<number>(1);
+  const [weekRangeStart, setWeekRangeStart] = useState<number>(1);
+  const [weekRangeEnd, setWeekRangeEnd] = useState<number>(13);
+  const [type, setType] = useState('article');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(isEditMode);
 
   const user = getCurrentUser();
+
+  // Configuração do editor Quill
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['link'],
+      ['clean']
+    ],
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'align',
+    'link'
+  ];
 
   useEffect(() => {
     // Verifica autenticação
@@ -56,27 +84,34 @@ const CreateEditInformation = () => {
 
     // Se está em modo edição, carrega os dados
     if (isEditMode && id) {
-      loadInformation(parseInt(id));
+      loadContent(id);
     }
-  }, [navigate, user, isEditMode, id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isEditMode]);
 
-  const loadInformation = async (informationId: number) => {
+  const loadContent = async (contentId: string) => {
     try {
-      const response = await getInformationById(informationId);
+      const response = await getContentById(contentId);
       
       if (response.success && response.data) {
         setTitle(response.data.title);
-        setContent(response.data.content);
+        setText(response.data.text);
+        setCategory(response.data.category);
+        setRole(response.data.role);
+        setTrimester(response.data.trimester);
+        setWeekRangeStart(response.data.weekRangeStart);
+        setWeekRangeEnd(response.data.weekRangeEnd);
+        setType(response.data.type);
       } else {
         toast({
           title: 'Erro',
-          description: 'Não foi possível carregar a informação.',
+          description: 'Não foi possível carregar o conteúdo.',
           variant: 'destructive',
         });
         navigate('/informations');
       }
     } catch (error) {
-      console.error('Erro ao carregar informação:', error);
+      console.error('Erro ao carregar conteúdo:', error);
     } finally {
       setIsLoadingData(false);
     }
@@ -85,19 +120,10 @@ const CreateEditInformation = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !content.trim()) {
+    if (!title.trim() || !text.trim()) {
       toast({
         title: 'Campos obrigatórios',
         description: 'Por favor, preencha título e conteúdo.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!user?.id) {
-      toast({
-        title: 'Erro',
-        description: 'Usuário não identificado.',
         variant: 'destructive',
       });
       return;
@@ -108,37 +134,40 @@ const CreateEditInformation = () => {
     try {
       let response;
 
+      const contentData = {
+        title,
+        text,
+        category,
+        role,
+        trimester,
+        weekRangeStart,
+        weekRangeEnd,
+        type,
+      };
+
       if (isEditMode && id) {
-        // Atualizar informação existente
-        response = await updateInformation(parseInt(id), {
-          title,
-          content,
-          authorId: user.id,
-        });
+        // Atualizar conteúdo existente
+        response = await updateContent(id, contentData);
       } else {
-        // Criar nova informação
-        response = await createInformation({
-          title,
-          content,
-          authorId: user.id,
-        });
+        // Criar novo conteúdo
+        response = await createContent(contentData);
       }
 
       if (response.success) {
         toast({
-          title: isEditMode ? 'Informação Atualizada!' : 'Informação Criada!',
+          title: isEditMode ? 'Conteúdo Atualizado!' : 'Conteúdo Criado!',
           description: isEditMode 
-            ? 'A informação foi atualizada com sucesso.' 
-            : 'A informação foi publicada com sucesso.',
+            ? 'O conteúdo foi atualizado com sucesso.' 
+            : 'O conteúdo foi publicado com sucesso.',
         });
         navigate('/informations');
       } else {
-        throw new Error(response.message || 'Erro ao salvar informação');
+        throw new Error(response.message || 'Erro ao salvar conteúdo');
       }
     } catch (error) {
       toast({
         title: 'Erro ao salvar',
-        description: error instanceof Error ? error.message : 'Não foi possível salvar a informação.',
+        description: error instanceof Error ? error.message : 'Não foi possível salvar o conteúdo.',
         variant: 'destructive',
       });
     } finally {
@@ -150,7 +179,7 @@ const CreateEditInformation = () => {
     if (!id) return;
 
     const confirmDelete = window.confirm(
-      'Tem certeza que deseja excluir esta informação? Esta ação não pode ser desfeita.'
+      'Tem certeza que deseja excluir este conteúdo? Esta ação não pode ser desfeita.'
     );
     
     if (!confirmDelete) return;
@@ -158,21 +187,21 @@ const CreateEditInformation = () => {
     setIsLoading(true);
 
     try {
-      const response = await deleteInformation(parseInt(id));
+      const response = await deleteContent(id);
 
       if (response.success) {
         toast({
-          title: 'Informação Excluída',
-          description: 'A informação foi excluída com sucesso.',
+          title: 'Conteúdo Excluído',
+          description: 'O conteúdo foi excluído com sucesso.',
         });
         navigate('/informations');
       } else {
-        throw new Error(response.message || 'Erro ao excluir informação');
+        throw new Error(response.message || 'Erro ao excluir conteúdo');
       }
     } catch (error) {
       toast({
         title: 'Erro ao excluir',
-        description: error instanceof Error ? error.message : 'Não foi possível excluir a informação.',
+        description: error instanceof Error ? error.message : 'Não foi possível excluir o conteúdo.',
         variant: 'destructive',
       });
     } finally {
@@ -206,12 +235,12 @@ const CreateEditInformation = () => {
           </div>
           
           <h1 className="text-4xl font-extrabold text-primary mb-2">
-            {isEditMode ? 'Editar Informação' : 'Nova Informação'}
+            {isEditMode ? 'Editar Conteúdo' : 'Novo Conteúdo'}
           </h1>
           <p className="text-muted-foreground">
             {isEditMode 
-              ? 'Atualize o conteúdo da informação' 
-              : 'Crie uma nova informação para compartilhar'}
+              ? 'Atualize o conteúdo informativo' 
+              : 'Crie um novo conteúdo para compartilhar'}
           </p>
         </div>
 
@@ -219,33 +248,127 @@ const CreateEditInformation = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Dados da Informação</CardTitle>
-              <CardDescription>Preencha os campos abaixo</CardDescription>
+              <CardTitle>Informações Básicas</CardTitle>
+              <CardDescription>Preencha os dados do conteúdo</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="title">Título</Label>
+                <Label htmlFor="title">Título *</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Novidades sobre parto humanizado"
+                  placeholder="Ex: Cuidados no primeiro trimestre"
                   className="mt-2"
                   required
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category">Categoria *</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gestacao">Gestação</SelectItem>
+                      <SelectItem value="parto">Parto</SelectItem>
+                      <SelectItem value="pos-parto">Pós-Parto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="type">Tipo *</Label>
+                  <Select value={type} onValueChange={setType}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="article">Artigo</SelectItem>
+                      <SelectItem value="guide">Guia</SelectItem>
+                      <SelectItem value="tip">Dica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="role">Visibilidade *</Label>
+                  <Select value={role} onValueChange={setRole}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Público</SelectItem>
+                      <SelectItem value="members">Apenas Membros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="trimester">Trimestre *</Label>
+                  <Select value={trimester.toString()} onValueChange={(val) => setTrimester(parseInt(val))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1º Trimestre</SelectItem>
+                      <SelectItem value="2">2º Trimestre</SelectItem>
+                      <SelectItem value="3">3º Trimestre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="weekStart">Semana Inicial *</Label>
+                  <Input
+                    id="weekStart"
+                    type="number"
+                    min="1"
+                    max="40"
+                    value={weekRangeStart}
+                    onChange={(e) => setWeekRangeStart(parseInt(e.target.value) || 1)}
+                    className="mt-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="weekEnd">Semana Final *</Label>
+                  <Input
+                    id="weekEnd"
+                    type="number"
+                    min="1"
+                    max="40"
+                    value={weekRangeEnd}
+                    onChange={(e) => setWeekRangeEnd(parseInt(e.target.value) || 13)}
+                    className="mt-2"
+                    required
+                  />
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="content">Conteúdo</Label>
-                <Textarea
-                  id="content"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Escreva aqui o conteúdo da informação..."
-                  rows={10}
-                  className="mt-2 resize-none"
-                  required
-                />
+                <Label htmlFor="text">Conteúdo (HTML) *</Label>
+                <div className="mt-2 border rounded-md">
+                  <ReactQuill 
+                    theme="snow"
+                    value={text}
+                    onChange={setText}
+                    modules={modules}
+                    formats={formats}
+                    placeholder="Escreva o conteúdo aqui. Use as ferramentas acima para formatação."
+                    className="min-h-[300px]"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use negrito, itálico, listas e outras formatações para destacar informações importantes.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -261,8 +384,8 @@ const CreateEditInformation = () => {
               {isLoading 
                 ? 'Salvando...' 
                 : isEditMode 
-                  ? '💾 Atualizar Informação' 
-                  : '✨ Publicar Informação'}
+                  ? '💾 Atualizar Conteúdo' 
+                  : '✨ Publicar Conteúdo'}
             </Button>
 
             {isEditMode && (

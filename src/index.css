@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import 'react-quill/dist/quill.snow.css';
 
 @tailwind base;
 @tailwind components;
@@ -276,4 +277,47 @@
   .input-humaniz {
     @apply w-full px-4 py-3 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-primary shadow-sm transition-all duration-200;
   }
+
+  /* Editor Quill customizado */
+  .ql-container {
+    @apply border-none font-sans;
+  }
+
+  .ql-editor {
+    @apply min-h-[200px] text-foreground;
+  }
+
+  .ql-toolbar {
+    @apply border-b border-border bg-muted/50 rounded-t-md;
+  }
+
+  /* Renderização de HTML (prose) */
+  .prose {
+    @apply text-foreground;
+  }
+
+  .prose h1, .prose h2, .prose h3 {
+    @apply text-primary font-bold;
+  }
+
+  .prose strong {
+    @apply font-bold text-foreground;
+  }
+
+  .prose em {
+    @apply italic;
+  }
+
+  .prose ul, .prose ol {
+    @apply ml-6;
+  }
+
+  .prose li {
+    @apply mb-1;
+  }
+
+  .prose a {
+    @apply text-primary underline;
+  }
 }
+
