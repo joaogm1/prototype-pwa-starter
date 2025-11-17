@@ -11,7 +11,7 @@
  */
 
 // IMPORTANTE: Configure aqui a URL do seu backend
-const API_BASE_URL = 'http://localhost:8080'; // URL do backend Java
+const API_BASE_URL = 'https://humanize-app-service.onrender.com'; // URL do backend Java
 
 /**
  * Interface que define os dados de um usuário (UserResponse do backend)

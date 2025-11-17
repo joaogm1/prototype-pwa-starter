@@ -79,7 +79,7 @@ const API_BASE_URL = 'https://seu-backend.com/api'; // ⬅️ COLOQUE A URL DO S
 npm run dev
 ```
 
-O app estará disponível em: `http://localhost:8080`
+O app estará disponível em: `https://humanize-app-service.onrender.com`
 
 ---
 

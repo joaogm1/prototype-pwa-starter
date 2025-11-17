@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">humanizeapp</string>
+    <string name="title_activity_main">humanizeapp</string>
+    <string name="package_name">humanize.app.ufcspa</string>
+    <string name="custom_url_scheme">humanize.app.ufcspa</string>
+</resources>

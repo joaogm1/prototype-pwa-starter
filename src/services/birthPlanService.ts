@@ -10,7 +10,7 @@
  * - deleteBirthPlan: Deleta um plano de parto
  */
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://humanize-app-service.onrender.com';
 
 /**
  * Interface para dados do plano de parto
