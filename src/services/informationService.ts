@@ -13,6 +13,7 @@ export interface Content {
   id: string;
   title: string;
   text: string; // HTML content
+  imageUrl?: string; // Link da imagem
   category: string; // 'gestacao', 'parto', 'pos-parto', etc.
   role: string; // 'public' ou 'members'
   trimester: number; // 1, 2 ou 3
@@ -29,6 +30,7 @@ export interface Content {
 export interface CreateContentRequest {
   title: string;
   text: string; // HTML
+  imageUrl?: string;
   category: string;
   role: string;
   trimester: number;

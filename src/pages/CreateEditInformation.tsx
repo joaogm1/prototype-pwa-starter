@@ -26,6 +26,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 const CreateEditInformation = () => {
+  const [showImageField, setShowImageField] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
@@ -33,6 +34,7 @@ const CreateEditInformation = () => {
   
   const [title, setTitle] = useState('');
   const [text, setText] = useState(''); // HTML content
+  const [imageUrl, setImageUrl] = useState(''); // Link da imagem
   const [category, setCategory] = useState('gestacao');
   const [role, setRole] = useState('public');
   const [trimester, setTrimester] = useState<number>(1);
@@ -51,7 +53,7 @@ const CreateEditInformation = () => {
       ['bold', 'italic', 'underline', 'strike'],
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       [{ 'align': [] }],
-      ['link'],
+      ['link', 'image'],
       ['clean']
     ],
   };
@@ -61,7 +63,7 @@ const CreateEditInformation = () => {
     'bold', 'italic', 'underline', 'strike',
     'list', 'bullet',
     'align',
-    'link'
+    'link', 'image'
   ];
 
   useEffect(() => {
@@ -96,6 +98,7 @@ const CreateEditInformation = () => {
       if (response.success && response.data) {
         setTitle(response.data.title);
         setText(response.data.text);
+        setImageUrl(response.data.imageUrl || '');
         setCategory(response.data.category);
         setRole(response.data.role);
         setTrimester(response.data.trimester);
@@ -137,6 +140,7 @@ const CreateEditInformation = () => {
       const contentData = {
         title,
         text,
+        imageUrl,
         category,
         role,
         trimester,
@@ -353,7 +357,9 @@ const CreateEditInformation = () => {
                 </div>
               </div>
 
-              <div>
+              {/* Campo de imagem removido. Use o botão de imagem do editor para inserir imagens no texto. */}
+
+              <div className="mt-4">
                 <Label htmlFor="text">Conteúdo (HTML) *</Label>
                 <div className="mt-2 border rounded-md">
                   <ReactQuill 
