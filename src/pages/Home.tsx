@@ -64,6 +64,15 @@ const Home = () => {
       <div className="w-full max-w-md mobile-container bg-white min-h-screen">
         {/* Header */}
         <div className="p-6 border-b border-border">
+          {/* Logo */}
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/src/components/images/logo.png" 
+              alt="HumanizApp Logo" 
+              className="h-20 w-auto"
+            />
+          </div>
+          
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-extrabold text-primary">HumanizApp</h1>

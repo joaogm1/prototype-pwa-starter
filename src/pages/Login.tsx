@@ -71,6 +71,15 @@ const Login = () => {
         </div>
         
         <div className="text-center mb-8">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/src/components/images/logo.png" 
+              alt="HumanizApp Logo" 
+              className="h-16 w-auto"
+            />
+          </div>
+          
           <h1 className="text-4xl font-extrabold text-primary mb-2">HumanizApp</h1>
           <p className="text-muted-foreground">
             Faça login para continuar sua jornada
