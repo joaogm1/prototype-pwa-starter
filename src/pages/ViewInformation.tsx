@@ -51,7 +51,6 @@ const ViewInformation = () => {
         navigate('/informations');
       }
     } catch (error) {
-      console.error('Erro ao carregar conteúdo:', error);
       toast({
         title: 'Erro',
         description: 'Erro ao carregar o conteúdo.',

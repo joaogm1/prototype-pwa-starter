@@ -71,8 +71,7 @@ export const createBirthPlan = async (
 ): Promise<ApiResponse> => {
   try {
     const url = `${API_BASE_URL}/birth-plans`;
-    console.log('📤 URL da requisição:', url);
-    console.log('📤 Criando plano de parto:', birthPlanData);
+
 
     const response = await fetch(url, {
       method: 'POST',
@@ -82,14 +81,10 @@ export const createBirthPlan = async (
       body: JSON.stringify(birthPlanData),
     });
 
-    console.log('📥 Status da resposta:', response.status);
-    console.log('📥 Response completo:', response);
 
     const data = await response.json();
-    console.log('📥 Dados recebidos:', data);
 
     if (!response.ok) {
-      console.error('❌ Resposta não OK. Status:', response.status, 'Data:', data);
       throw new Error((data as ErrorResponse).message || 'Erro ao criar plano de parto');
     }
 
@@ -98,9 +93,7 @@ export const createBirthPlan = async (
       data: data as BirthPlanResponse,
     };
   } catch (error) {
-    console.error('❌ ERRO COMPLETO:', error);
-    console.error('❌ Tipo do erro:', typeof error);
-    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'N/A');
+
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao criar plano',
@@ -117,8 +110,7 @@ export const createBirthPlan = async (
 export const getBirthPlanByUserId = async (userId: number): Promise<ApiResponse> => {
   try {
     const url = `${API_BASE_URL}/birth-plans/user/${userId}`;
-    console.log('📤 URL da requisição:', url);
-    console.log('📤 Buscando plano de parto do usuário:', userId);
+
 
     const response = await fetch(url, {
       method: 'GET',
@@ -127,12 +119,10 @@ export const getBirthPlanByUserId = async (userId: number): Promise<ApiResponse>
       },
     });
 
-    console.log('📥 Status da resposta:', response.status);
-    console.log('📥 Response completo:', response);
 
     if (response.status === 404) {
       // Usuário não tem plano de parto ainda
-      console.log('ℹ️ Plano não encontrado (404) - isso é normal se for a primeira vez');
+
       return {
         success: true,
         data: undefined,
@@ -140,10 +130,8 @@ export const getBirthPlanByUserId = async (userId: number): Promise<ApiResponse>
     }
 
     const data = await response.json();
-    console.log('📥 Dados recebidos:', data);
 
     if (!response.ok) {
-      console.error('❌ Resposta não OK. Status:', response.status, 'Data:', data);
       throw new Error((data as ErrorResponse).message || 'Erro ao buscar plano de parto');
     }
 
@@ -152,9 +140,7 @@ export const getBirthPlanByUserId = async (userId: number): Promise<ApiResponse>
       data: data as BirthPlanResponse,
     };
   } catch (error) {
-    console.error('❌ ERRO COMPLETO ao buscar:', error);
-    console.error('❌ Tipo do erro:', typeof error);
-    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'N/A');
+
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao buscar plano',
@@ -170,7 +156,6 @@ export const getBirthPlanByUserId = async (userId: number): Promise<ApiResponse>
  */
 export const getBirthPlanById = async (id: number): Promise<ApiResponse> => {
   try {
-    console.log('📤 Buscando plano de parto ID:', id);
 
     const response = await fetch(`${API_BASE_URL}/birth-plans/${id}`, {
       method: 'GET',
@@ -179,10 +164,8 @@ export const getBirthPlanById = async (id: number): Promise<ApiResponse> => {
       },
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     const data = await response.json();
-    console.log('📥 Dados recebidos:', data);
 
     if (!response.ok) {
       throw new Error((data as ErrorResponse).message || 'Erro ao buscar plano de parto');
@@ -193,7 +176,6 @@ export const getBirthPlanById = async (id: number): Promise<ApiResponse> => {
       data: data as BirthPlanResponse,
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar plano de parto:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao buscar plano',
@@ -213,7 +195,6 @@ export const updateBirthPlan = async (
   birthPlanData: BirthPlanData
 ): Promise<ApiResponse> => {
   try {
-    console.log('📤 Atualizando plano de parto ID:', id, birthPlanData);
 
     const response = await fetch(`${API_BASE_URL}/birth-plans/${id}`, {
       method: 'PUT',
@@ -223,10 +204,8 @@ export const updateBirthPlan = async (
       body: JSON.stringify(birthPlanData),
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     const data = await response.json();
-    console.log('📥 Dados recebidos:', data);
 
     if (!response.ok) {
       throw new Error((data as ErrorResponse).message || 'Erro ao atualizar plano de parto');
@@ -237,7 +216,6 @@ export const updateBirthPlan = async (
       data: data as BirthPlanResponse,
     };
   } catch (error) {
-    console.error('❌ Erro ao atualizar plano de parto:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao atualizar plano',
@@ -253,7 +231,6 @@ export const updateBirthPlan = async (
  */
 export const deleteBirthPlan = async (id: number): Promise<ApiResponse> => {
   try {
-    console.log('📤 Deletando plano de parto ID:', id);
 
     const response = await fetch(`${API_BASE_URL}/birth-plans/${id}`, {
       method: 'DELETE',
@@ -262,7 +239,6 @@ export const deleteBirthPlan = async (id: number): Promise<ApiResponse> => {
       },
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     if (!response.ok && response.status !== 204) {
       const data = await response.json();
@@ -273,7 +249,6 @@ export const deleteBirthPlan = async (id: number): Promise<ApiResponse> => {
       success: true,
     };
   } catch (error) {
-    console.error('❌ Erro ao deletar plano de parto:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao deletar plano',

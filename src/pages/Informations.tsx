@@ -46,7 +46,6 @@ const Informations = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar conteúdos:', error);
     } finally {
       setIsLoading(false);
     }

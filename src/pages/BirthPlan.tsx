@@ -77,10 +77,8 @@ const BirthPlan = () => {
     try {
       // Pega o usuário logado
       const user = getCurrentUser();
-      console.log('🔍 Usuário logado:', user);
       
       if (!user || !user.id) {
-        console.error('❌ Nenhum usuário logado encontrado');
         toast({
           title: 'Erro',
           description: 'Faça login primeiro para acessar o plano de parto.',
@@ -90,7 +88,6 @@ const BirthPlan = () => {
         return;
       }
       
-      console.log('🔍 Carregando plano do usuário ID:', user.id);
       
       const response = await getBirthPlanByUserId(user.id);
       
@@ -115,7 +112,6 @@ const BirthPlan = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar plano:', error);
     } finally {
       setIsLoadingData(false);
     }
@@ -139,19 +135,16 @@ const BirthPlan = () => {
     try {
       // Pega o usuário logado
       const user = getCurrentUser();
-      console.log('💾 Usuário ao salvar:', user);
       
       if (!user || !user.id) {
         throw new Error('Faça login primeiro para salvar o plano de parto');
       }
       
-      console.log('💾 Salvando plano - User ID:', user.id, 'Existing Plan ID:', existingPlanId);
 
       let response;
 
       if (existingPlanId) {
         // Atualizar plano existente
-        console.log('📝 Atualizando plano existente...');
         response = await updateBirthPlan(existingPlanId, birthPlan);
         
         if (response.success) {
@@ -163,7 +156,6 @@ const BirthPlan = () => {
         }
       } else {
         // Criar novo plano
-        console.log('✨ Criando novo plano...');
         response = await createBirthPlan({
           userId: user.id,
           ...birthPlan

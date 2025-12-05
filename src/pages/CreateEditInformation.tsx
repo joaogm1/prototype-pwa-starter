@@ -114,7 +114,6 @@ const CreateEditInformation = () => {
         navigate('/informations');
       }
     } catch (error) {
-      console.error('Erro ao carregar conteúdo:', error);
     } finally {
       setIsLoadingData(false);
     }

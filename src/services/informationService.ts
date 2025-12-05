@@ -63,7 +63,6 @@ interface ApiResponse<T> {
  */
 export const getAllContents = async (): Promise<ApiResponse<Content[]>> => {
   try {
-    console.log('📰 Buscando todos os conteúdos...');
     
     const response = await fetch(`${API_BASE_URL}/contents`, {
       method: 'GET',
@@ -72,21 +71,18 @@ export const getAllContents = async (): Promise<ApiResponse<Content[]>> => {
       },
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     if (!response.ok) {
       throw new Error('Erro ao buscar conteúdos');
     }
 
     const data = await response.json();
-    console.log('📥 Conteúdos recebidos:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar conteúdos:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -99,7 +95,6 @@ export const getAllContents = async (): Promise<ApiResponse<Content[]>> => {
  */
 export const getContentsByRole = async (role: string): Promise<ApiResponse<Content[]>> => {
   try {
-    console.log('📰 Buscando conteúdos por role:', role);
     
     const response = await fetch(`${API_BASE_URL}/contents/role/${role}`, {
       method: 'GET',
@@ -113,14 +108,12 @@ export const getContentsByRole = async (role: string): Promise<ApiResponse<Conte
     }
 
     const data = await response.json();
-    console.log('📥 Conteúdos recebidos:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar conteúdos por role:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -133,7 +126,6 @@ export const getContentsByRole = async (role: string): Promise<ApiResponse<Conte
  */
 export const getContentsByCategory = async (category: string): Promise<ApiResponse<Content[]>> => {
   try {
-    console.log('📰 Buscando conteúdos por categoria:', category);
     
     const response = await fetch(`${API_BASE_URL}/contents/category/${category}`, {
       method: 'GET',
@@ -147,14 +139,12 @@ export const getContentsByCategory = async (category: string): Promise<ApiRespon
     }
 
     const data = await response.json();
-    console.log('� Conteúdos recebidos:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar conteúdos por categoria:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -167,7 +157,6 @@ export const getContentsByCategory = async (category: string): Promise<ApiRespon
  */
 export const getContentsByTrimester = async (trimester: number): Promise<ApiResponse<Content[]>> => {
   try {
-    console.log('📰 Buscando conteúdos por trimestre:', trimester);
     
     const response = await fetch(`${API_BASE_URL}/contents/trimester/${trimester}`, {
       method: 'GET',
@@ -181,14 +170,12 @@ export const getContentsByTrimester = async (trimester: number): Promise<ApiResp
     }
 
     const data = await response.json();
-    console.log('📥 Conteúdos recebidos:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar conteúdos por trimestre:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -201,7 +188,6 @@ export const getContentsByTrimester = async (trimester: number): Promise<ApiResp
  */
 export const getContentsByWeek = async (week: number): Promise<ApiResponse<Content[]>> => {
   try {
-    console.log('📰 Buscando conteúdos por semana:', week);
     
     const response = await fetch(`${API_BASE_URL}/contents/week/${week}`, {
       method: 'GET',
@@ -215,14 +201,12 @@ export const getContentsByWeek = async (week: number): Promise<ApiResponse<Conte
     }
 
     const data = await response.json();
-    console.log('📥 Conteúdos recebidos:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar conteúdos por semana:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -235,7 +219,6 @@ export const getContentsByWeek = async (week: number): Promise<ApiResponse<Conte
  */
 export const getContentById = async (id: string): Promise<ApiResponse<Content>> => {
   try {
-    console.log('📰 Buscando conteúdo ID:', id);
     
     const response = await fetch(`${API_BASE_URL}/contents/${id}`, {
       method: 'GET',
@@ -244,21 +227,18 @@ export const getContentById = async (id: string): Promise<ApiResponse<Content>> 
       },
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     if (!response.ok) {
       throw new Error('Conteúdo não encontrado');
     }
 
     const data = await response.json();
-    console.log('📥 Conteúdo recebido:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar conteúdo:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -273,7 +253,6 @@ export const createContent = async (
   content: CreateContentRequest
 ): Promise<ApiResponse<Content>> => {
   try {
-    console.log('✨ Criando novo conteúdo:', content);
     
     const response = await fetch(`${API_BASE_URL}/contents`, {
       method: 'POST',
@@ -283,21 +262,18 @@ export const createContent = async (
       body: JSON.stringify(content),
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     if (!response.ok) {
       throw new Error('Erro ao criar conteúdo');
     }
 
     const data = await response.json();
-    console.log('📥 Conteúdo criado:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao criar conteúdo:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -313,7 +289,6 @@ export const updateContent = async (
   content: Partial<CreateContentRequest>
 ): Promise<ApiResponse<Content>> => {
   try {
-    console.log('📝 Atualizando conteúdo ID:', id, content);
     
     const response = await fetch(`${API_BASE_URL}/contents/${id}`, {
       method: 'PUT',
@@ -323,21 +298,18 @@ export const updateContent = async (
       body: JSON.stringify(content),
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     if (!response.ok) {
       throw new Error('Erro ao atualizar conteúdo');
     }
 
     const data = await response.json();
-    console.log('📥 Conteúdo atualizado:', data);
 
     return {
       success: true,
       data: data,
     };
   } catch (error) {
-    console.error('❌ Erro ao atualizar conteúdo:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -350,7 +322,6 @@ export const updateContent = async (
  */
 export const deleteContent = async (id: string): Promise<ApiResponse<void>> => {
   try {
-    console.log('🗑️ Deletando conteúdo ID:', id);
     
     const response = await fetch(`${API_BASE_URL}/contents/${id}`, {
       method: 'DELETE',
@@ -359,19 +330,16 @@ export const deleteContent = async (id: string): Promise<ApiResponse<void>> => {
       },
     });
 
-    console.log('📥 Status da resposta:', response.status);
 
     if (!response.ok && response.status !== 204) {
       throw new Error('Erro ao deletar conteúdo');
     }
 
-    console.log('✅ Conteúdo deletado com sucesso');
 
     return {
       success: true,
     };
   } catch (error) {
-    console.error('❌ Erro ao deletar conteúdo:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido',

@@ -60,7 +60,7 @@ export interface AuthResponse {
  */
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   try {
-    console.log('📤 Passo 1: Autenticando usuário:', { username: credentials.username });
+
     
     // Passo 1: Autentica o usuário (retorna true/false)
     const loginResponse = await fetch(`${API_BASE_URL}/users/login`, {
@@ -71,17 +71,17 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       body: JSON.stringify(credentials),
     });
 
-    console.log('📥 Status da autenticação:', loginResponse.status);
+
     
     const isAuthenticated = await loginResponse.json();
-    console.log('📥 Autenticado?', isAuthenticated);
+
 
     if (!loginResponse.ok || !isAuthenticated) {
       throw new Error('Username ou senha incorretos');
     }
 
     // Passo 2: Busca os dados completos do usuário
-    console.log('📤 Passo 2: Buscando dados do usuário:', credentials.username);
+
     
     const userResponse = await fetch(`${API_BASE_URL}/users/${credentials.username}`, {
       method: 'GET',
@@ -90,14 +90,14 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       },
     });
 
-    console.log('📥 Status da busca do usuário:', userResponse.status);
+
 
     if (!userResponse.ok) {
       throw new Error('Erro ao buscar dados do usuário');
     }
 
     const userData = await userResponse.json();
-    console.log('📥 Dados do usuário recebidos:', userData);
+
 
     // Salva os dados do usuário no localStorage
     localStorage.setItem('user', JSON.stringify(userData));
@@ -109,7 +109,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       user: userData,
     };
   } catch (error) {
-    console.error('❌ Erro no login:', error);
+
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao fazer login',
@@ -125,7 +125,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
  */
 export const register = async (userData: RegisterData): Promise<AuthResponse> => {
   try {
-    console.log('📤 Enviando dados para o backend:', userData);
+
     
     const response = await fetch(`${API_BASE_URL}/users/register`, {
       method: 'POST',
@@ -135,10 +135,10 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
       body: JSON.stringify(userData),
     });
 
-    console.log('📥 Status da resposta:', response.status);
+
     
     const data = await response.json();
-    console.log('📥 Dados recebidos do backend:', data);
+
 
     if (!response.ok) {
       // Backend retorna { message: "..." } em caso de erro (status 400)
@@ -152,7 +152,7 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
       user: data, // data já é o UserResponse com {id, name, username, cpf}
     };
   } catch (error) {
-    console.error('❌ Erro no cadastro:', error);
+
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Erro desconhecido ao cadastrar',
