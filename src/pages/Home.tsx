@@ -67,7 +67,7 @@ const Home = () => {
           {/* Logo */}
           <div className="flex justify-center mb-4">
             <img 
-              src="/src/components/images/logo.png" 
+              src="/logo.png" 
               alt="HumanizApp Logo" 
               className="h-20 w-auto"
             />

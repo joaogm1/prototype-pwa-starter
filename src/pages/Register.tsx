@@ -152,7 +152,7 @@ const Register = () => {
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <img 
-              src="/src/components/images/logo.png" 
+              src="/logo.png" 
               alt="HumanizApp Logo" 
               className="h-16 w-auto"
             />
