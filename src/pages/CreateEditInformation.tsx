@@ -96,15 +96,15 @@ const CreateEditInformation = () => {
       const response = await getContentById(contentId);
       
       if (response.success && response.data) {
-        setTitle(response.data.title);
-        setText(response.data.text);
+        setTitle(response.data.title || '');
+        setText(response.data.text || '');
         setImageUrl(response.data.imageUrl || '');
-        setCategory(response.data.category);
-        setRole(response.data.role);
-        setTrimester(response.data.trimester);
-        setWeekRangeStart(response.data.weekRangeStart);
-        setWeekRangeEnd(response.data.weekRangeEnd);
-        setType(response.data.type);
+        setCategory(response.data.category || 'gestacao');
+        setRole(response.data.role || 'public');
+        setTrimester(response.data.trimester || 1);
+        setWeekRangeStart(response.data.weekRangeStart || 1);
+        setWeekRangeEnd(response.data.weekRangeEnd || 13);
+        setType(response.data.type || 'article');
       } else {
         toast({
           title: 'Erro',
@@ -314,7 +314,7 @@ const CreateEditInformation = () => {
 
                 <div>
                   <Label htmlFor="trimester">Trimestre *</Label>
-                  <Select value={trimester.toString()} onValueChange={(val) => setTrimester(parseInt(val))}>
+                  <Select value={(trimester || 1).toString()} onValueChange={(val) => setTrimester(parseInt(val) || 1)}>
                     <SelectTrigger className="mt-2">
                       <SelectValue />
                     </SelectTrigger>
@@ -335,7 +335,7 @@ const CreateEditInformation = () => {
                     type="number"
                     min="1"
                     max="40"
-                    value={weekRangeStart}
+                    value={weekRangeStart || 1}
                     onChange={(e) => setWeekRangeStart(parseInt(e.target.value) || 1)}
                     className="mt-2"
                     required
@@ -349,7 +349,7 @@ const CreateEditInformation = () => {
                     type="number"
                     min="1"
                     max="40"
-                    value={weekRangeEnd}
+                    value={weekRangeEnd || 13}
                     onChange={(e) => setWeekRangeEnd(parseInt(e.target.value) || 13)}
                     className="mt-2"
                     required
