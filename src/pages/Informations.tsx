@@ -89,7 +89,13 @@ const Informations = () => {
           <div className="flex justify-between items-start mb-4">
             <Button
               variant="ghost"
-              onClick={() => navigate('/home')}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate('/home');
+                }
+              }}
             >
               ← Voltar
             </Button>
